@@ -8,11 +8,15 @@ Under Proton, the game may start but show an error instead of the email sign-in 
 
 The game opens its sign-in page using Microsoft WebView2. Under Proton, this window could fail to appear or remain blank. The plugin uses DirectComposition, a rendering path that returned `0x80004001` ("not implemented") under Proton. WebView2 and Steam registry paths could also be missing.
 
-The patch replaces the open-source `WebView.dll` plugin. Sign-in opens in a window over the game and uses software rendering. The game's own graphics are unchanged.
+The patch replaces the open-source `WebView.dll` plugin. Sign-in is embedded in the game window and uses software rendering. On Steam Deck, this also fixes on-screen keyboard input in Gaming Mode. The game's own graphics are unchanged.
+
+A clean install and sign-in were tested on a Linux PC. Updating an existing patch and using the on-screen keyboard were also tested on Steam Deck in Gaming Mode.
 
 **This is a temporary, unofficial workaround until the developers provide full Linux support.** It does not imply that such support has been announced. Compatibility with every device is not guaranteed.
 
 ## Install
+
+> **Steam Deck: install the patch in Desktop Mode. Once installation finishes, return to Gaming Mode and launch the game from your Steam library.** Sign-in and the on-screen keyboard were tested in Gaming Mode.
 
 You need Steam with an account signed in, **the game already installed through Steam**, and an internet connection. You do not need to launch the game first. Any Steam library can be used, including another drive or a microSD card.
 
@@ -25,7 +29,7 @@ Allow at least 3 GB for the game environment, plus space for a backup if an envi
    bash berserk-proton-fix.sh
    ```
 
-3. Confirm tool installation if Steam asks. Once the script finishes, launch the game through Steam and sign in by email. On Deck, you can return to Gaming Mode.
+3. Confirm tool installation if Steam asks. Once the script finishes, launch the game through Steam and sign in by email. **On Steam Deck, return to Gaming Mode first, then launch the game from your Steam library.**
 
 The script selects Proton and sets launch options automatically. To do this, it requests a normal Steam shutdown, then reopens Steam afterwards. Do not reopen Steam yourself during installation.
 
@@ -49,6 +53,10 @@ The helper and DLL are embedded in the single `.sh` file. No separate build or d
 The backup is only for returning to the state before patch installation. It is not a backup of the entire game or Steam. Running the installer again does not replace it or erase a saved sign-in.
 
 The backup, WebView2 installer and logs are kept in **one folder beside the prefix**: `steamapps/compatdata/.berserk-proton-fix-4926310`. The script creates no separate folders in your home directory. Backup size depends on the existing prefix. **Do not publish this folder: it may contain authentication data.**
+
+## Updating the patch
+
+If the patch is already installed, download the new `berserk-proton-fix.sh` and run the same command. **No rollback is needed first.** The script updates the DLL, preserves your saved sign-in and keeps the original rollback backup. Components already installed are not downloaded or installed again.
 
 ## If installation stops or the game updates
 
