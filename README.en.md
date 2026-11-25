@@ -1,4 +1,4 @@
-# Berserk Heroes Online: 4game sign-in on Linux
+# Berserk Heroes Online: sign-in fix for Linux
 
 [Русский](README.md)
 
@@ -48,7 +48,7 @@ The helper and DLL are embedded in the single `.sh` file. No separate build or d
 
 The backup is only for returning to the state before patch installation. It is not a backup of the entire game or Steam. Running the installer again does not replace it or erase a saved sign-in.
 
-It is stored beside the prefix, in `steamapps/compatdata/.berserk-proton-fix-4926310`. Its size depends on the existing prefix. **Do not publish this folder: it may contain authentication data.**
+The backup, WebView2 installer and logs are kept in **one folder beside the prefix**: `steamapps/compatdata/.berserk-proton-fix-4926310`. The script creates no separate folders in your home directory. Backup size depends on the existing prefix. **Do not publish this folder: it may contain authentication data.**
 
 ## If installation stops or the game updates
 

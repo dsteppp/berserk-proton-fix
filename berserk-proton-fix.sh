@@ -220,6 +220,17 @@ def config_plan(root, proton):
     return result
 
 
+def init_state(state, prefix):
+    if state.is_symlink():
+        fail('служебная папка является ссылкой. Изменения не начаты.')
+    marker = state / 'snapshot.begin'
+    if marker.exists() and read(marker) != str(prefix):
+        fail('служебная папка принадлежит другому префиксу. Изменения не начаты.')
+    state.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(state, 0o700)
+    atomic(marker, str(prefix))
+
+
 def snapshot(state, prefix, dll, root, proton):
     if state.is_symlink() or prefix.is_symlink() or dll.is_symlink():
         fail('вместо обычной папки или DLL найдена ссылка. Изменения не начаты.')
@@ -231,9 +242,7 @@ def snapshot(state, prefix, dll, root, proton):
             fail('пути или Proton изменились после начала установки. Сначала выполните --uninstall.')
         return
     records = config_plan(root, proton)  # Всё проверяем до первого изменения.
-    state.mkdir(mode=0o700, parents=True, exist_ok=True)
-    os.chmod(state, 0o700)
-    atomic(state / 'snapshot.begin', str(prefix))
+    init_state(state, prefix)
     partial = state / 'prefix.partial'
     # Здесь только наша незавершённая копия. Пользовательский префикс не удаляется.
     if partial.exists():
@@ -449,6 +458,8 @@ def main():
         print(appid)
     elif action == 'validate':
         config_plan(Path(args[0]), args[1])
+    elif action == 'init-state':
+        init_state(*map(Path, args))
     elif action == 'snapshot':
         snapshot(*(Path(a) for a in args[:4]), args[4])
     elif action == 'check-dll':
@@ -528,8 +539,7 @@ for l in "${LIBS[@]}"; do
 done
 [[ -z "$FOUND_PREFIX" ]] || CDATA="$FOUND_PREFIX"
 STATE="${CDATA%/*}/.berserk-proton-fix-$APPID"
-key=$(printf '%s' "$CDATA" | sha256sum); key=${key%% *}
-CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/berserk-proton-fix/$key"
+CACHE="$STATE/cache"
 LOG="$CACHE/proton.log"
 if pgrep -f '[B]erserk Heroes Beta Version[.]exe' >/dev/null; then die 'закройте игру и повторите скрипт.'; fi
 say "Игра: $GAME"
@@ -614,6 +624,12 @@ if [[ -d "$CDATA/pfx" ]]; then
     done
 fi
 [[ ! -L "$CACHE" && ! -L "$STATE" ]] || die 'папка установщика является ссылкой. Изменения не начаты.'
+if [[ "$MODE" == --uninstall && ! -f "$STATE/state.json" && ! -f "$STATE/snapshot.begin" ]]; then
+    if [[ -f "$DLL.original" ]] || printf '%s  %s\n' "$DLL_SHA256" "$DLL" | sha256sum -c --status; then
+        die 'найден прежний патч без снимка этого установщика. Не удаляйте префикс; исходную DLL можно вернуть проверкой файлов Steam.'
+    fi
+fi
+helper init-state "$STATE" "$CDATA"
 mkdir -p "$CACHE"
 [[ ! -f "$LOG" ]] || mv -f -- "$LOG" "$LOG.previous"
 : >"$LOG"
@@ -649,22 +665,13 @@ if pgrep -x steam >/dev/null; then
 fi
 if [[ "$MODE" == --uninstall ]]; then
     if [[ ! -f "$STATE/state.json" ]]; then
-        if [[ -d "$STATE" ]]; then
-            helper discard-incomplete "$STATE" "$CDATA"
-        else
-            if [[ -f "$DLL.original" ]] || printf '%s  %s\n' "$DLL_SHA256" "$DLL" | sha256sum -c --status; then
-                die 'найден прежний патч без снимка этого установщика. Полный автоматический откат не подтверждён. Не удаляйте префикс; исходную DLL можно вернуть проверкой файлов Steam.'
-            fi
-        fi
-        rm -rf --one-file-system -- "$CACHE"
-        rmdir -- "${CACHE%/*}" 2>/dev/null || true
+        helper discard-incomplete "$STATE" "$CDATA"
         say 'Завершённой установки этим установщиком нет. Его незавершённая копия и кэш удалены. Изменения старых способов установки не отменялись.'
         return 0
     fi
     say 'Возвращаю состояние до первой установки. Вход и настройки, появившиеся ПОСЛЕ неё, будут удалены.'
     helper restore "$STATE" "$DLL_SHA256"
-    rm -rf --one-file-system -- "$STATE" "$CACHE"
-    rmdir -- "${CACHE%/*}" 2>/dev/null || true
+    rm -rf --one-file-system -- "$STATE"
     say 'Откат завершён: исходные префикс, DLL и настройки игры возвращены; копия и кэш патча удалены.'
     echo 'Proton и Steam Linux Runtime оставлены: это общие инструменты Steam. Сам скачанный скрипт можно удалить.'
     return 0
