@@ -1,4 +1,4 @@
-# Berserk Heroes Online: sign-in fix for Linux
+# Berserk Heroes Online: Steam version sign-in fix for Linux
 
 [Русский](README.md)
 
@@ -6,7 +6,7 @@ Under Proton, the game may start but show an error instead of the email sign-in 
 
 ## Why sign-in failed
 
-The game opens the 4game sign-in page using Microsoft WebView2. Its plugin uses DirectComposition, a rendering path that returned `0x80004001` ("not implemented") under Proton. WebView2 and Steam registry paths could also be missing.
+The game opens its sign-in page using Microsoft WebView2. Under Proton, this window could fail to appear or remain blank. The plugin uses DirectComposition, a rendering path that returned `0x80004001` ("not implemented") under Proton. WebView2 and Steam registry paths could also be missing.
 
 The patch replaces the open-source `WebView.dll` plugin. Sign-in opens in a window over the game and uses software rendering. The game's own graphics are unchanged.
 
