@@ -80,7 +80,7 @@ Other games and their settings are unchanged. Proton and Steam Linux Runtime rem
 
 ## Rights and terms
 
-The patch changes only the open-source sign-in plugin, the local environment and Steam settings. It does not change gameplay rules, assets, the main executable or server authentication. It does not bypass payments, DRM, anti-cheat or access checks. It is not affiliated with the game developer, 4game, Valve or Microsoft.
+The patch changes only the open-source sign-in plugin, the local environment and Steam settings. It does not change gameplay rules, assets, the main executable or server authentication. It does not bypass payments, DRM, anti-cheat or access checks. It is not affiliated with the game developer, Valve or Microsoft.
 
 The plugin is a modified build of [gree/unity-webview](https://github.com/gree/unity-webview), revision `1256c3849c`, under the [zlib license](LICENSE.unity-webview). Original code and modifications are [MIT-licensed](LICENSE). The game and third-party installers are not redistributed here. Their owners' rights and terms still apply.
 
