@@ -4,6 +4,8 @@
 
 An unofficial compatibility patch for the **Steam version of Berserk Heroes Online** (AppID `4926310`). It helps display the email sign-in window under Proton. The same installer is intended for Linux x86_64 PCs and Steam Deck.
 
+**This is a temporary workaround until the game developers provide full official Linux support.** It does not replace official support or imply that the developers have committed to releasing it.
+
 ## Before you start
 
 - Install Steam and sign in.
