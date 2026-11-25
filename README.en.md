@@ -2,115 +2,86 @@
 
 [Русский](README.md)
 
-An unofficial compatibility patch for the **Steam version of Berserk Heroes Online** (AppID `4926310`). It helps display the email sign-in window under Proton. The same installer is intended for Linux x86_64 PCs and Steam Deck.
+Under Proton, the game may start but show an error instead of the email sign-in window. This script fixes that window in the **Steam version of Berserk Heroes Online** on Linux x86_64 and Steam Deck.
 
-**This is a temporary workaround until the game developers provide full official Linux support.** It does not replace official support or imply that the developers have committed to releasing it.
+## Why sign-in failed
 
-## Before you start
+The game opens the 4game sign-in page using Microsoft WebView2. Its plugin uses DirectComposition, a rendering path that returned `0x80004001` ("not implemented") under Proton. WebView2 and Steam registry paths could also be missing.
 
-- Install Steam and sign in.
-- **Install the game through Steam.** Any Steam library is supported in principle, including another drive or a microSD card.
-- Have an internet connection for missing components.
-- Allow up to 3 GB for the game environment, plus space for one backup of an existing Proton prefix. Steam needs additional space if it must download Proton and its runtime.
+The patch replaces the open-source `WebView.dll` plugin. Sign-in opens in a window over the game and uses software rendering. The game's own graphics are unchanged.
 
-**You do not need to launch the game first.** If you already launched it with another Proton version, the installer backs up the existing environment and selects Proton itself. Close the game before running the installer.
-
-Bash, Python 3, curl and standard Linux commands are required. The script checks for them. It does not use sudo, install system packages or disable SteamOS read-only protection. Having Steam installed does not guarantee these commands exist on every Linux distribution.
+**This is a temporary, unofficial workaround until the developers provide full Linux support.** It does not imply that such support has been announced. Compatibility with every device is not guaranteed.
 
 ## Install
 
-1. On Steam Deck, switch to **Desktop Mode**. On a Linux PC, open a terminal.
-2. Download `berserk-proton-fix.sh` from this repository. Open a terminal in the folder containing the downloaded file.
-3. Run:
+You need Steam with an account signed in, **the game already installed through Steam**, and an internet connection. You do not need to launch the game first. Any Steam library can be used, including another drive or a microSD card.
+
+Allow at least 3 GB for the game environment, plus space for a backup if an environment already exists. Proton and the Steam runtime need additional download space.
+
+1. Close running games. On Steam Deck, switch to **Desktop Mode**.
+2. Download [berserk-proton-fix.sh](berserk-proton-fix.sh). Open a terminal in its folder and run:
 
    ```bash
    bash berserk-proton-fix.sh
    ```
 
-4. If Steam displays a Proton or Steam Linux Runtime installation dialog, confirm it. The script handles the remaining steps. If a download takes longer than the wait period, let Steam finish and run the same command again.
-5. When installation completes, launch the game **through Steam** and sign in by email. On Deck you can then return to Gaming Mode.
+3. Confirm tool installation if Steam asks. Once the script finishes, launch the game through Steam and sign in by email. On Deck, you can return to Gaming Mode.
 
-You do not need to choose Proton or edit launch options manually. The script selects Proton and adds `PROTON_USE_XALIA=0`, preserving ordinary existing options. It requests a normal Steam shutdown before editing settings and reopens Steam afterwards. Do not reopen Steam yourself while installation is running.
+The script selects Proton and sets launch options automatically. To do this, it requests a normal Steam shutdown, then reopens Steam afterwards. Do not reopen Steam yourself during installation.
 
-If existing launch options contain a complex command the installer cannot safely adjust, it stops and explains how to save those options and temporarily clear the field. Do not discard your settings without a copy.
+Bash, Python 3, curl and standard Linux commands are required. If something is missing or settings cannot be changed safely, the script stops with instructions. It does not use sudo, install system packages or disable SteamOS protection.
 
-### If installation stops
+## What the script does
 
-Read the error message, follow its instructions, then run:
+- Finds the game by AppID `4926310`, without a fixed installation path.
+- If needed, opens Steam's installation of official Proton 11.0 and the required Steam Linux Runtime.
+- Saves the original state for rollback.
+- Downloads WebView2 from Microsoft and installs it only in this game's environment.
+- Adds Steam paths and WebView2 settings to the environment's registry.
+- Replaces `WebView.dll` and adds `PROTON_USE_XALIA=0` to launch options, preserving ordinary existing options.
 
-```bash
-bash berserk-proton-fix.sh
-```
+The helper and DLL are embedded in the single `.sh` file. No separate build or download is needed for them.
 
-Completed components are reused. An interrupted WebView2 download resumes using its saved Microsoft download URL. The first completed backup is not replaced. A normal retry does not erase a saved sign-in.
+## Why there is a backup
 
-**If sign-in stops working after a game update, try running the installer again:**
+**The script creates the backup before its first changes. You do not need to prepare one yourself.** It saves the original DLL, affected Steam settings and the prefix: Proton's folder containing Windows components, settings and sign-in data for this game. If no prefix exists yet, the script records that instead.
 
-```bash
-bash berserk-proton-fix.sh
-```
+The backup is only for returning to the state before patch installation. It is not a backup of the entire game or Steam. Running the installer again does not replace it or erase a saved sign-in.
 
-Steam may have replaced the patched DLL with the original; reinstalling the patch may help in that case. **Compatibility after updates is not guaranteed:** the developer may change the plugin, its interface with the game or the authentication flow. The existing patch may then be incompatible, and reinstalling it cannot fix that incompatibility. If the problem persists, stop using the patch with that game version. Steam file verification may also restore the original DLL.
+It is stored beside the prefix, in `steamapps/compatdata/.berserk-proton-fix-4926310`. Its size depends on the existing prefix. **Do not publish this folder: it may contain authentication data.**
 
-The full-rollback snapshot belongs to the game version present at the first installation. After an update, do not manually restore an old DLL: it may be incompatible with the new game version.
+## If installation stops or the game updates
 
-Check the environment **without installing anything or changing settings**:
+Follow the script's instructions, then run the same installation command again. Completed components are reused. If Steam is still downloading tools, let it finish before retrying.
+
+If sign-in stops working after a game update, **try reinstalling the patch with the same command**. Steam may have restored the original DLL. However, the developer may have changed the plugin or sign-in flow, making the old patch incompatible. **Compatibility after updates is not guaranteed.** If the script reports an incompatible DLL or the problem persists, do not bypass its checks or manually restore an old DLL.
+
+Check the environment without installing anything:
 
 ```bash
 bash berserk-proton-fix.sh --check
 ```
 
-This checks paths, tools and whether settings can be prepared. It does not test account sign-in or prove the game works.
+This checks components and access to settings, not account sign-in.
 
 ## Full rollback
 
-Close the game and run from the folder containing the script:
+Close the game and run:
 
 ```bash
 bash berserk-proton-fix.sh --uninstall
 ```
 
-This restores:
+The script restores the backed-up DLL, prefix and settings. If no prefix existed before installation, it removes the created one. It then deletes the backup, logs and its cache. You can delete the downloaded `.sh` file yourself.
 
-- the DLL present before the first installation using this installer;
-- the original Proton prefix, or removes the created prefix if none existed before;
-- the previous Proton selection and launch options for this game, without reverting playtime or other games' settings.
+**Sign-in and settings created after the first patch installation will be lost.** If the DLL was updated or you changed launch options, rollback may stop rather than overwrite newer data. Follow its instructions.
 
-It then deletes this patch's backup, logs and download cache. You can delete the downloaded `.sh` file yourself.
+Other games and their settings are unchanged. Proton and Steam Linux Runtime remain because other games may need them. The script does not undo manual changes made before its installation.
 
-**Sign-in and settings created after the first installation are lost during full rollback.** The backup may contain authentication data; do not publish it. If you subsequently changed launch options or Steam updated the DLL, rollback may stop rather than overwrite newer data. Follow the message instead of deleting files at random.
+## Rights and terms
 
-Proton and Steam Linux Runtime remain installed because other games may use them. The script does not remove Steam or the game. Manual modifications and leftovers from older installation methods predating this installer are not automatically undone.
+The patch changes only the open-source sign-in plugin, the local environment and Steam settings. It does not change gameplay rules, assets, the main executable or server authentication. It does not bypass payments, DRM, anti-cheat or access checks. It is not affiliated with the game developer, 4game, Valve or Microsoft.
 
-## Why sign-in failed
+The plugin is a modified build of [gree/unity-webview](https://github.com/gree/unity-webview), revision `1256c3849c`, under the [zlib license](LICENSE.unity-webview). Original code and modifications are [MIT-licensed](LICENSE). The game and third-party installers are not redistributed here. Their owners' rights and terms still apply.
 
-The game embeds the 4game sign-in page using Microsoft WebView2. Its original open-source Unity plugin uses `CreateCoreWebView2CompositionController`. Under the tested Proton version, this returned `E_NOTIMPL` (`0x80004001`): the required DirectComposition path did not work. A clean prefix could also lack WebView2 or Steam registry paths.
-
-The modified plugin uses `CreateCoreWebView2Controller`, displaying a regular browser window over the game. WebView2 receives software-rendering options: `--disable-gpu --disable-gpu-compositing`. These affect the sign-in window, not the game's rendering. There are no synthetic activation clicks or sandbox-disabling flags. `PROTON_USE_XALIA=0` disables Xalia for this launch because its activity interfered with WebView2 in testing.
-
-## What the installer does
-
-1. Finds Steam, its libraries and the game by AppID manifests, not a hard-coded installation folder.
-2. Selects official Proton 11.0. Reads the required Steam Linux Runtime from Proton's manifest. Incomplete downloads are not treated as installed tools.
-3. Opens Steam's normal tool installation if required. It does not download third-party Proton builds.
-4. Requests normal Steam shutdown and saves the original DLL, prefix and affected settings. The backup is stored in `steamapps/compatdata/.berserk-proton-fix-4926310`, beside the prefix.
-5. Sets the selected Proton and launch option for local Steam users, without changing other games' settings.
-6. If necessary, runs Microsoft's official WebView2 installer inside this game's prefix through the matching Steam runtime. The installer is downloaded over HTTPS from Microsoft, not bundled here.
-7. Adds Steam paths and WebView2 compatibility settings to the prefix registry and replaces `WebView.dll` with the included modified open-source plugin. The embedded DLL checksum is verified before replacement.
-8. Reuses completed steps and reopens Steam afterwards. Errors include a reason, log location and rollback command.
-
-The cache is stored under `$XDG_CACHE_HOME/berserk-proton-fix` or `~/.cache/berserk-proton-fix`. For one environment, storage includes one WebView2 installer up to 512 MiB, up to two Proton logs capped at 4 MiB each, and one prefix snapshot. Snapshot size depends on the existing prefix; this is not a general Steam backup. Do not attach the `compatdata` directory to public bug reports.
-
-## Purpose, rights and licenses
-
-This is an independent, unofficial compatibility modification, not affiliated with the game developer, 4game, Valve or Microsoft. It does not add gameplay features, change balance, assets, the main game executable or server authentication. It does not bypass access checks, payments, DRM or anti-cheat.
-
-It would nevertheless be inaccurate to say that no game files are changed: the script replaces the **open-source `WebView.dll` plugin** and modifies the local prefix and Steam settings. The original DLL is saved for rollback. This repository does not redistribute the game, its assets, Steam, Proton or the WebView2 installer.
-
-The plugin is based on [gree/unity-webview](https://github.com/gree/unity-webview), `plugins/Windows`, revision `1256c3849c`. This is a modified build, not the original upstream plugin. Its **zlib license** permits modification and redistribution subject to preserving attribution and marking altered versions. The original notice is preserved in `LICENSE.unity-webview`. The installer and original modifications are MIT-licensed (`LICENSE`). Rights to the game and third-party components remain with their respective owners. Their terms still apply; no blanket legal assurance concerning those terms is made here.
-
-## Use and independent development
-
-This project is provided **as is**. There are no guarantees, support commitments, promises to review third-party builds or obligations to accept contributions. It is a published workaround, not a maintained service. Use it if it helps. If you want changes, fork it and maintain your version independently. Responses to issues and pull-request reviews are not promised.
-
-Only the single `.sh` file is needed: the helper and patched DLL are embedded. No separate build is required. For independent changes, inspect the script and consult the upstream unity-webview project. Review third-party modified scripts before running them.
+**Provided as is, without guarantees or commitments to support or review PRs.** For changes, fork the project and maintain your own version. Read third-party scripts before running them.
